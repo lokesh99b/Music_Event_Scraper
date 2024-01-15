@@ -8,7 +8,6 @@ import sqlite3
 
 
 URL = "https://programmer100.pythonanywhere.com/tours/"
-connection = sqlite3.connect("data.db")
 
 
 class Event:
@@ -40,23 +39,26 @@ class Email:
             server.sendmail(username, receiver, message)
 
 
-def store(extracted):
-    row = extracted.split(",")
-    row = [item.strip() for item in row]
-    cursor = connection.cursor()
-    cursor.execute("INSERT INTO events VALUES(?,?,?)", row)
-    connection.commit()
+class Database:
+    def __init__(self, db_path):
+        self.connection = sqlite3.connect(db_path)
 
+    def store(self, extracted):
+        row = extracted.split(",")
+        row = [item.strip() for item in row]
+        cursor = self.connection.cursor()
+        cursor.execute("INSERT INTO events VALUES(?,?,?)", row)
+        self.connection.commit()
 
-def read(extracts):
-    row = extracted.split(",")
-    row = [item.strip() for item in row]
-    band, city, date = row
-    cursor = connection.cursor()
-    cursor.execute("SELECT * FROM events WHERE band=? AND city=? AND date=?", (band, city, date))
-    rows = cursor.fetchall() #fetchall returns list of string when used with exceute and returns list of tuple when used with executeany
-    print(rows)
-    return rows
+    def read(self, extracts):
+        row = extracted.split(",")
+        row = [item.strip() for item in row]
+        band, city, date = row
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT * FROM events WHERE band=? AND city=? AND date=?", (band, city, date))
+        rows = cursor.fetchall() #fetchall returns list of string when used with exceute and returns list of tuple when used with executeany
+        print(rows)
+        return rows
 
 
 if __name__ == '__main__':
@@ -67,9 +69,10 @@ if __name__ == '__main__':
         print(extracted)
 
         if extracted != "No upcoming tours":
-            row = read(extracted)
+            db = Database(db_path="data.db")
+            row = db.read(extracted)
             if not row:
-                store(extracted)
+                db.store(extracted)
                 email = Email()
                 email.send(message="New event Found!")
-        time.sleep(2)
+        time.sleep(1)
